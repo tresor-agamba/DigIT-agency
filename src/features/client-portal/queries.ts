@@ -10,5 +10,5 @@ export function findClientProject(clientId: string, projectId: string) {
 }
 
 export function findClientVersion(clientId: string, projectId: string, versionId: string) {
-  return prisma.projectVersion.findFirst({ where: { id: versionId, projectId, project: { clientId } }, select: { id: true, versionNumber: true, name: true, description: true, status: true, createdAt: true, project: { select: { id: true, name: true } }, deliverables: { select: { id: true, name: true, type: true, description: true, fileName: true, mimeType: true, fileSize: true, fileUrl: true, createdAt: true }, orderBy: { createdAt: "desc" } } } });
+  return prisma.projectVersion.findFirst({ where: { id: versionId, projectId, project: { clientId } }, select: { id: true, versionNumber: true, name: true, description: true, status: true, createdAt: true, project: { select: { id: true, name: true } }, deliverables: { select: { id: true, name: true, type: true, description: true, fileName: true, mimeType: true, fileSize: true, fileUrl: true, createdAt: true }, orderBy: { createdAt: "desc" } }, modificationRequests: { where: { clientId }, select: { id: true, title: true, description: true, status: true, adminResponse: true, createdAt: true }, orderBy: { createdAt: "desc" } } } });
 }
