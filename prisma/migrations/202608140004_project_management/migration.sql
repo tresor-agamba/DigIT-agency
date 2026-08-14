@@ -1,0 +1,3 @@
+ALTER TYPE "ProjectType" RENAME VALUE 'WEBSITE' TO 'SITE_WEB';
+
+ALTER TABLE "Project" RENAME COLUMN "title" TO "name";

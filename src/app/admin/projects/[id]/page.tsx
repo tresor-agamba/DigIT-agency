@@ -1,0 +1,21 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ProjectForm } from "@/app/admin/projects/project-form";
+import { projectStatusLabels, projectTypeLabels, statusClass } from "@/features/projects/labels";
+import { projectIdSchema } from "@/features/projects/validation";
+import { prisma } from "@/lib/prisma";
+
+type PageProps = { params: Promise<{ id: string }> };
+
+export default async function ProjectDetailPage({ params }: PageProps) {
+  const parsed = projectIdSchema.safeParse((await params).id);
+  if (!parsed.success) notFound();
+  const [project, clients] = await Promise.all([prisma.project.findUnique({ where: { id: parsed.data }, include: { client: { select: { name: true, phone: true } }, versions: { select: { id: true, versionNumber: true, name: true, status: true, createdAt: true, _count: { select: { deliverables: true } } }, orderBy: { versionNumber: "desc" } } } }), prisma.user.findMany({ where: { role: "CLIENT" }, select: { id: true, name: true, phone: true, isActive: true }, orderBy: { name: "asc" } })]);
+  if (!project) notFound();
+
+  return <main className="mx-auto max-w-4xl px-6 py-12 text-white"><Link href="/admin/projects" className="text-sm font-medium text-electric-mint">← Projets</Link><div className="mt-5 flex flex-wrap items-center gap-4"><div><p className="text-sm font-semibold tracking-[0.18em] text-electric-mint">FICHE PROJET</p><h1 className="mt-3 text-4xl font-bold">{project.name}</h1></div><small className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusClass(project.status)}`}>{projectStatusLabels[project.status]}</small></div>
+    <dl className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-graphite-secondary p-6 sm:grid-cols-2"><div><dt className="text-sm text-muted">Client</dt><dd className="mt-1">{project.client.name}</dd></div><div><dt className="text-sm text-muted">Téléphone du client</dt><dd className="mt-1">{project.client.phone}</dd></div><div><dt className="text-sm text-muted">Type</dt><dd className="mt-1">{projectTypeLabels[project.type]}</dd></div><div><dt className="text-sm text-muted">Statut</dt><dd className="mt-1">{projectStatusLabels[project.status]}</dd></div><div><dt className="text-sm text-muted">Créé le</dt><dd className="mt-1">{project.createdAt.toLocaleDateString("fr-FR")}</dd></div><div><dt className="text-sm text-muted">Mis à jour le</dt><dd className="mt-1">{project.updatedAt.toLocaleDateString("fr-FR")}</dd></div><div className="sm:col-span-2"><dt className="text-sm text-muted">Description</dt><dd className="mt-1 whitespace-pre-wrap">{project.description || "Aucune description."}</dd></div></dl>
+    <section className="mt-10"><h2 className="text-2xl font-bold">Modifier le projet</h2><ProjectForm clients={clients} project={project} /></section>
+    <section className="mt-10"><div className="flex items-center justify-between gap-4"><h2 className="text-2xl font-bold">Versions</h2><Link href={`/admin/projects/${project.id}/versions/new`} className="rounded-xl bg-electric-mint px-4 py-2 text-sm font-semibold text-graphite">+ Nouvelle version</Link></div><div className="mt-5 space-y-3">{project.versions.map((version) => <Link key={version.id} href={`/admin/projects/${project.id}/versions/${version.id}`} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-graphite-secondary p-5 transition hover:border-electric-mint/50"><span><strong>Version {version.versionNumber} — {version.name}</strong><small className="mt-1 block text-muted">Créée le {version.createdAt.toLocaleDateString("fr-FR")}</small></span><span className="text-sm text-muted">{version._count.deliverables} livrable(s) · {version.status}</span></Link>)}{!project.versions.length && <p className="rounded-xl border border-dashed border-white/15 p-5 text-muted">Aucune version créée.</p>}</div></section><section className="mt-10 grid gap-4 sm:grid-cols-2">{["Demandes de modification — bientôt disponible", "Validation — bientôt disponible", "Paiement — bientôt disponible", "Livraison — bientôt disponible"].map((label) => <div key={label} className="rounded-2xl border border-dashed border-white/15 p-5 text-muted">{label}</div>)}</section>
+  </main>;
+}

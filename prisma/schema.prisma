@@ -13,7 +13,7 @@ enum UserRole {
 }
 
 enum ProjectType {
-  WEBSITE
+  SITE_WEB
   MOBILE_APP
   AD_VIDEO
 }
@@ -36,8 +36,19 @@ enum PaymentStatus {
 
 enum VersionStatus {
   DRAFT
-  SUBMITTED
+  READY_FOR_REVIEW
   APPROVED
+  CHANGES_REQUESTED
+  FINAL
+}
+
+enum DeliverableType {
+  VIDEO
+  WEBSITE
+  MOBILE_APP
+  DOCUMENT
+  ARCHIVE
+  OTHER
 }
 
 model User {
@@ -57,7 +68,7 @@ model User {
 
 model Project {
   id            String        @id @default(cuid())
-  title         String
+  name          String
   description   String?
   type          ProjectType
   status        ProjectStatus @default(DRAFT)
@@ -70,7 +81,6 @@ model Project {
   updatedAt     DateTime      @updatedAt
 
   client        User            @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Restrict)
-  deliverables  Deliverable[]
   versions      ProjectVersion[]
   changeRequests ChangeRequest[]
 
@@ -79,23 +89,28 @@ model Project {
 }
 
 model Deliverable {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
-  fileUrl     String
-  isFinal     Boolean  @default(false)
-  projectId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  type        DeliverableType
+  description String?
+  fileUrl     String?
+  fileName    String
+  mimeType    String?
+  fileSize    Int?
+  versionId   String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version     ProjectVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
-  @@index([projectId])
+  @@index([versionId])
 }
 
 model ProjectVersion {
   id          String        @id @default(cuid())
-  label       String
-  notes       String?
+  versionNumber Int
+  name        String
+  description String?
   previewUrl  String?
   status      VersionStatus @default(DRAFT)
   projectId   String
@@ -106,7 +121,9 @@ model ProjectVersion {
 
   project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   validatedBy User?         @relation("VersionValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
+  deliverables Deliverable[]
 
+  @@unique([projectId, versionNumber])
   @@index([projectId])
 }
 

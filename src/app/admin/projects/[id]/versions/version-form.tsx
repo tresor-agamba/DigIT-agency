@@ -1,0 +1,12 @@
+"use client";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createVersion, updateVersion } from "@/features/versions/actions";
+import { initialActionState } from "@/features/versions/types";
+
+const statuses = { DRAFT: "Brouillon", READY_FOR_REVIEW: "Prête à réviser", APPROVED: "Approuvée", CHANGES_REQUESTED: "Modifications demandées", FINAL: "Finale" };
+export function VersionForm({ projectId, version }: { projectId: string; version?: { id: string; versionNumber: number; name: string; description: string | null; status: keyof typeof statuses } }) {
+  const router = useRouter(); const [state, action, pending] = useActionState(version ? updateVersion : createVersion, initialActionState);
+  useEffect(() => { if (state.status === "success" && state.id && !version) router.push(`/admin/projects/${projectId}/versions/${state.id}`); }, [state, projectId, router, version]);
+  return <form action={action} className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-graphite-secondary p-6"><input type="hidden" name="projectId" value={projectId} />{version && <input type="hidden" name="versionId" value={version.id} />}{!version && <label className="text-sm font-medium">Numéro de version<input required name="versionNumber" type="number" min="1" className="mt-2 w-full rounded-xl border border-white/15 bg-graphite px-4 py-3" /></label>}<label className="text-sm font-medium">Nom<input required name="name" defaultValue={version?.name ?? ""} className="mt-2 w-full rounded-xl border border-white/15 bg-graphite px-4 py-3" /></label><label className="text-sm font-medium">Statut<select name="status" defaultValue={version?.status ?? "DRAFT"} className="mt-2 w-full rounded-xl border border-white/15 bg-graphite px-4 py-3">{Object.entries(statuses).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label className="text-sm font-medium">Description<textarea name="description" defaultValue={version?.description ?? ""} rows={4} className="mt-2 w-full rounded-xl border border-white/15 bg-graphite px-4 py-3" /></label>{state.status !== "idle" && <p className={state.status === "success" ? "text-electric-mint" : "text-red-300"}>{state.message}</p>}<button disabled={pending} className="w-fit rounded-xl bg-electric-mint px-5 py-3 font-semibold text-graphite">{pending ? "Enregistrement…" : version ? "Enregistrer" : "Créer la version"}</button></form>;
+}
