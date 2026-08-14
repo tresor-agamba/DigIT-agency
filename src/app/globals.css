@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-graphite: #0D1117;
+  --color-graphite-secondary: #1A1F26;
+  --color-electric-mint: #00E5B8;
+  --color-muted: #9CA3AF;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0D1117;
+  color: #FFFFFF;
+}
