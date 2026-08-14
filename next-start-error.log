@@ -1,0 +1,4 @@
+⨯ unhandledRejection: Error: You cannot use different slug names for the same dynamic path ('id' !== 'projectId').
+    at ignore-listed frames
+⨯ Error: You cannot use different slug names for the same dynamic path ('id' !== 'projectId').
+    at ignore-listed frames

@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { ClientSignOutButton } from "@/components/client-sign-out-button";
+export function ClientNavigation() { return <header className="border-b border-white/10 bg-graphite-secondary"><nav className="mx-auto flex max-w-5xl items-center justify-between gap-5 px-5 py-5"><Link href="/client" className="font-bold tracking-wide text-electric-mint">DIGIT AGENCY</Link><div className="flex items-center gap-5"><Link href="/client" className="text-sm text-muted hover:text-white">Tableau de bord</Link><Link href="/client/projects" className="text-sm text-muted hover:text-white">Mes projets</Link><ClientSignOutButton /></div></nav></header>; }
