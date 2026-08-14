@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
 
         const user = await prisma.user.findUnique({ where: { phone: parsed.data.phone } });
-        if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return null;
+        if (!user || !user.isActive || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return null;
 
         return { id: user.id, name: user.name, phone: user.phone, role: user.role };
       },

@@ -1,3 +1,7 @@
-export default function AdminPage() {
-  return <main className="min-h-screen bg-graphite p-8 text-white"><h1 className="text-3xl font-bold">Administration</h1><p className="mt-3 text-muted">Le tableau de bord administrateur sera protégé par authentification.</p></main>;
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+
+export default async function AdminPage() {
+  const totalClients = await prisma.user.count({ where: { role: "CLIENT" } });
+  return <main className="mx-auto max-w-6xl px-6 py-12 text-white"><p className="text-sm font-semibold tracking-[0.18em] text-electric-mint">ADMINISTRATION</p><h1 className="mt-3 text-4xl font-bold">Tableau de bord</h1><section className="mt-10 max-w-sm rounded-2xl border border-white/10 bg-graphite-secondary p-6"><p className="text-sm text-muted">Clients enregistrés</p><p className="mt-2 text-4xl font-bold">{totalClients}</p><Link href="/admin/clients" className="mt-6 inline-block text-sm font-semibold text-electric-mint">Gérer les clients →</Link></section></main>;
 }
