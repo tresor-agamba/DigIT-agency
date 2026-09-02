@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import { ServiceCard } from "@/components/public/service-card";
+import { findActiveServices } from "@/features/public-services/queries";
+export const metadata: Metadata = { title: "Services | DigIT Agency", description: "Découvrez les services digitaux et technologiques de DigIT Agency." };
+export default async function ServicesPage(){const services=await findActiveServices();return <main className="mx-auto min-h-[60vh] max-w-7xl px-5 py-20 text-white lg:px-8"><p className="text-sm font-bold tracking-[.2em] text-electric-mint">CATALOGUE</p><h1 className="mt-4 text-5xl font-black">Nos services</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted">Des prestations conçues pour transformer vos besoins métier en solutions fiables, utiles et évolutives.</p>{services.length?<div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{services.map(service=><ServiceCard key={service.id} service={service}/>)}</div>:<p className="mt-12 rounded-2xl border border-white/10 p-8 text-muted">Aucun service n’est actuellement publié.</p>}</main>}

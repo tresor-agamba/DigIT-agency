@@ -1,0 +1,12 @@
+"use server";
+import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth/guards";
+import { changeOrderAdminNotes, changeOrderQuote, changeOrderStatus, AdminOrderOperationError } from "./operations";
+import { notesUpdateSchema, quoteUpdateSchema, statusUpdateSchema } from "./validation";
+import type { AdminOrderActionState } from "./types";
+function refresh(id:string){revalidatePath("/admin/orders");revalidatePath(`/admin/orders/${id}`);revalidatePath("/client/orders")}
+function failure(error:unknown,fallback:string):AdminOrderActionState{return{status:"error",message:error instanceof AdminOrderOperationError?error.message:fallback}}
+export async function updateOrderStatus(_:AdminOrderActionState,formData:FormData):Promise<AdminOrderActionState>{const admin=await requireAdmin();const parsed=statusUpdateSchema.safeParse(Object.fromEntries(formData.entries()));if(!parsed.success)return{status:"error",message:parsed.error.issues[0]?.message??"Informations invalides."};try{await changeOrderStatus(admin.id,parsed.data.id,parsed.data.status);refresh(parsed.data.id);return{status:"success",message:"Statut mis à jour."}}catch(error){return failure(error,"La mise à jour du statut a échoué.")}}
+export async function updateOrderQuote(_:AdminOrderActionState,formData:FormData):Promise<AdminOrderActionState>{const admin=await requireAdmin();const parsed=quoteUpdateSchema.safeParse(Object.fromEntries(formData.entries()));if(!parsed.success)return{status:"error",message:parsed.error.issues[0]?.message??"Montant invalide."};try{await changeOrderQuote(admin.id,parsed.data.id,new Prisma.Decimal(parsed.data.quotedAmount));refresh(parsed.data.id);return{status:"success",message:"Montant proposé enregistré."}}catch(error){return failure(error,"La mise à jour du montant a échoué.")}}
+export async function updateOrderAdminNotes(_:AdminOrderActionState,formData:FormData):Promise<AdminOrderActionState>{const admin=await requireAdmin();const parsed=notesUpdateSchema.safeParse(Object.fromEntries(formData.entries()));if(!parsed.success)return{status:"error",message:parsed.error.issues[0]?.message??"Notes invalides."};try{await changeOrderAdminNotes(admin.id,parsed.data.id,parsed.data.adminNotes||null);refresh(parsed.data.id);return{status:"success",message:"Notes internes enregistrées."}}catch(error){return failure(error,"La mise à jour des notes a échoué.")}}

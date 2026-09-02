@@ -1,0 +1,3 @@
+import { prisma } from "@/lib/prisma";
+export function findClientOrders(clientId:string){return prisma.order.findMany({where:{clientId},select:{id:true,orderNumber:true,title:true,status:true,createdAt:true,service:{select:{name:true}}},orderBy:{createdAt:"desc"}})}
+export function findClientOrder(clientId:string,id:string){return prisma.order.findFirst({where:{id,clientId},select:{id:true,orderNumber:true,title:true,description:true,companyName:true,budget:true,currency:true,desiredDeadline:true,quotedAmount:true,status:true,createdAt:true,service:{select:{name:true}},project:{select:{id:true,name:true}}}})}

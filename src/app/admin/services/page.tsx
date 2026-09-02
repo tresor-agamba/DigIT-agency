@@ -1,0 +1,19 @@
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { formatServicePrice, servicePriceTypeLabels } from "@/features/services/labels";
+
+export default async function ServicesPage({ searchParams }: { searchParams: Promise<{ q?: string; filter?: string }> }) {
+  const { q = "", filter = "all" } = await searchParams;
+  const query = q.trim();
+  const where = { ...(query ? { OR: [{ name: { contains: query, mode: "insensitive" as const } }, { category: { contains: query, mode: "insensitive" as const } }] } : {}), ...(filter === "active" ? { isActive: true } : filter === "inactive" ? { isActive: false } : filter === "featured" ? { isFeatured: true } : {}) };
+  const [services, total, active, inactive, featured] = await Promise.all([
+    prisma.service.findMany({ where, orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }] }),
+    prisma.service.count(), prisma.service.count({ where: { isActive: true } }), prisma.service.count({ where: { isActive: false } }), prisma.service.count({ where: { isFeatured: true } }),
+  ]);
+  return <main className="mx-auto max-w-6xl px-6 py-12 text-white">
+    <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold tracking-[.18em] text-electric-mint">SERVICES</p><h1 className="mt-3 text-4xl font-bold">Catalogue de services</h1></div><Link href="/admin/services/new" className="rounded-xl bg-electric-mint px-5 py-3 font-semibold text-graphite">+ Nouveau service</Link></div>
+    <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["Total",total],["Actifs",active],["Inactifs",inactive],["Mis en avant",featured]].map(([label,value])=><div key={String(label)} className="rounded-2xl border border-white/10 bg-graphite-secondary p-5"><p className="text-sm text-muted">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div>)}</section>
+    <form className="mt-10 grid gap-3 md:grid-cols-[1fr_auto_auto]"><input name="q" defaultValue={q} placeholder="Rechercher par nom ou catégorie" className="rounded-xl border border-white/15 bg-graphite-secondary px-4 py-3 outline-none focus:border-electric-mint"/><select name="filter" defaultValue={filter} className="rounded-xl border border-white/15 bg-graphite-secondary px-4 py-3"><option value="all">Tous</option><option value="active">Actifs</option><option value="inactive">Inactifs</option><option value="featured">Mis en avant</option></select><button className="rounded-xl border border-white/15 px-5 py-3">Filtrer</button></form>
+    <section className="mt-6 overflow-x-auto rounded-2xl border border-white/10"><div className="min-w-[900px]"><div className="grid grid-cols-[1.5fr_1fr_1.2fr_.8fr_.8fr_.5fr_1fr] gap-3 border-b border-white/10 bg-graphite-secondary px-5 py-4 text-xs font-semibold uppercase text-muted"><span>Service</span><span>Catégorie</span><span>Prix</span><span>État</span><span>Featured</span><span>Ordre</span><span>Modification</span></div>{services.map(service=><Link key={service.id} href={`/admin/services/${service.id}`} className="grid grid-cols-[1.5fr_1fr_1.2fr_.8fr_.8fr_.5fr_1fr] gap-3 border-b border-white/5 px-5 py-4 text-sm transition hover:bg-white/5"><span><strong className="block">{service.name}</strong><small className="text-muted">{servicePriceTypeLabels[service.priceType]}</small></span><span>{service.category}</span><span>{formatServicePrice(service.priceType,service.basePrice,service.currency)}</span><span className={service.isActive?"text-electric-mint":"text-muted"}>{service.isActive?"Actif":"Inactif"}</span><span>{service.isFeatured?"Oui":"Non"}</span><span>{service.displayOrder}</span><span>{service.updatedAt.toLocaleDateString("fr-FR")}</span></Link>)}{!services.length&&<p className="p-8 text-muted">Aucun service ne correspond aux critères.</p>}</div></section>
+  </main>;
+}

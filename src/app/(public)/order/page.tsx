@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { OrderForm } from "./order-form";
+export const metadata:Metadata={title:"Commander | DigIT Agency",description:"Créez votre espace Client et transmettez votre demande de service à DigIT Agency."};
+export default async function OrderPage({searchParams}:{searchParams:Promise<{service?:string}>}){const{service:slug}=await searchParams;const services=await prisma.service.findMany({where:{isActive:true},select:{id:true,name:true,slug:true},orderBy:[{displayOrder:"asc"},{createdAt:"desc"}]});const selectedServiceId=slug?services.find(service=>service.slug===slug)?.id:undefined;return <main className="mx-auto max-w-4xl px-5 py-16 text-white"><p className="text-sm font-bold tracking-[.2em] text-electric-mint">COMMANDE EN LIGNE</p><h1 className="mt-4 text-4xl font-black sm:text-5xl">Parlez-nous de votre besoin.</h1><p className="mb-10 mt-5 max-w-2xl leading-8 text-muted">Choisissez un service et créez votre espace sécurisé pour suivre votre demande.</p><OrderForm services={services} selectedServiceId={selectedServiceId}/></main>}

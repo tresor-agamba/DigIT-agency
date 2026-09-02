@@ -1,0 +1,1 @@
+import{z}from"zod";import{projectTypeSchema}from"@/features/projects/validation";export const convertOrderSchema=z.object({projectName:z.string().trim().min(2).max(160),projectDescription:z.string().trim().max(2000).transform(v=>v||undefined),projectType:projectTypeSchema});

@@ -11,6 +11,7 @@
 .env
 .env.local
 .env.*.local
+/private-storage/
 
 # local tooling cache
 /.npm-cache/

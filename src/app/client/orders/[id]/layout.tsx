@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { requireClient } from "@/lib/auth/guards";
+import { prisma } from "@/lib/prisma";
+export default async function Layout({children,params}:Readonly<{children:React.ReactNode;params:Promise<{id:string}>}>){const client=await requireClient();const{id}=await params;const order=await prisma.order.findFirst({where:{id,clientId:client.id,status:"CONVERTED_TO_PROJECT"},select:{project:{select:{id:true,name:true}}}});return <>{order?.project&&<section className="mx-auto mt-8 max-w-5xl rounded-2xl border border-electric-mint/30 bg-electric-mint/5 p-6"><p className="font-semibold">Votre commande est maintenant en production.</p><Link className="mt-2 inline-block text-electric-mint underline" href={`/client/projects/${order.project.id}`}>Voir mon projet</Link></section>}{children}</>}

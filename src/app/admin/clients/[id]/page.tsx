@@ -9,7 +9,7 @@ type PageProps = { params: Promise<{ id: string }> };
 export default async function ClientDetailPage({ params }: PageProps) {
   const parsed = clientIdSchema.safeParse((await params).id);
   if (!parsed.success) notFound();
-  const client = await prisma.user.findFirst({ where: { id: parsed.data, role: "CLIENT" }, select: { id: true, name: true, phone: true, isActive: true, createdAt: true, updatedAt: true, _count: { select: { projects: true } } } });
+  const client = await prisma.user.findFirst({ where: { id: parsed.data, role: "CLIENT" }, select: { id: true, name: true, email: true, phone: true, isActive: true, createdAt: true, updatedAt: true, _count: { select: { projects: true } } } });
   if (!client) notFound();
 
   return <main className="mx-auto max-w-4xl px-6 py-12 text-white"><Link href="/admin/clients" className="text-sm font-medium text-electric-mint">← Clients</Link><div className="mt-5"><p className="text-sm font-semibold tracking-[0.18em] text-electric-mint">FICHE CLIENT</p><h1 className="mt-3 text-4xl font-bold">{client.name}</h1></div>
