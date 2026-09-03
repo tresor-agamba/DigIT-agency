@@ -1,0 +1,5 @@
+import { Readable } from "node:stream";
+import { parseByteRange, privateFileInfo, privateFileStream } from "@/lib/storage/private-storage";
+
+const securityHeaders={"Accept-Ranges":"bytes","Cache-Control":"private, no-store","Content-Disposition":"inline","X-Content-Type-Options":"nosniff","Cross-Origin-Resource-Policy":"same-origin"};
+export async function createPrivatePreviewResponse(storageKey:string,mimeType:string,rangeHeader:string|null){const file=await privateFileInfo(storageKey);const range=parseByteRange(rangeHeader,file.size);if(range==="invalid")return new Response(null,{status:416,headers:{...securityHeaders,"Content-Range":`bytes */${file.size}`}});const selected=range??{start:0,end:file.size-1};const length=selected.end-selected.start+1;const stream=privateFileStream(file.absolutePath,range??undefined);return new Response(Readable.toWeb(stream) as ReadableStream,{status:range?206:200,headers:{...securityHeaders,"Content-Type":mimeType,"Content-Length":String(length),...(range?{"Content-Range":`bytes ${selected.start}-${selected.end}/${file.size}`}:{})}})}

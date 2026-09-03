@@ -5,5 +5,5 @@ export function canApproveVersion(status: VersionStatus, alreadyApproved: boolea
 }
 
 export function canRequestModification(status: VersionStatus) {
-  return status !== "APPROVED" && status !== "FINAL";
+  return status === "READY_FOR_REVIEW";
 }

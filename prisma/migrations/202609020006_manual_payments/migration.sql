@@ -1,0 +1,15 @@
+CREATE TYPE "PaymentType" AS ENUM ('DEPOSIT', 'FINAL', 'OTHER');
+CREATE TYPE "PaymentMethod" AS ENUM ('MPESA', 'AIRTEL_MONEY', 'ORANGE_MONEY', 'BANK_TRANSFER', 'CASH', 'OTHER');
+CREATE TYPE "PaymentAuditAction" AS ENUM ('PAYMENT_CREATED', 'PAYMENT_SUBMITTED', 'PAYMENT_RESUBMITTED', 'PAYMENT_REVIEW_STARTED', 'PAYMENT_APPROVED', 'PAYMENT_REJECTED');
+CREATE TABLE "Payment" ("id" TEXT NOT NULL,"projectId" TEXT NOT NULL,"amount" DECIMAL(12,2) NOT NULL,"currency" TEXT NOT NULL,"type" "PaymentType" NOT NULL DEFAULT 'FINAL',"method" "PaymentMethod","status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',"reference" TEXT,"proofStorageKey" TEXT,"proofFileName" TEXT,"proofMimeType" TEXT,"proofFileSize" INTEGER,"submittedAt" TIMESTAMP(3),"reviewedAt" TIMESTAMP(3),"reviewedById" TEXT,"rejectionReason" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Payment_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "PaymentAuditLog" ("id" TEXT NOT NULL,"paymentId" TEXT NOT NULL,"actorId" TEXT NOT NULL,"action" "PaymentAuditAction" NOT NULL,"oldStatus" "PaymentStatus","newStatus" "PaymentStatus" NOT NULL,"details" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "PaymentAuditLog_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "Payment_projectId_createdAt_idx" ON "Payment"("projectId", "createdAt");
+CREATE INDEX "Payment_status_submittedAt_idx" ON "Payment"("status", "submittedAt");
+CREATE INDEX "Payment_method_idx" ON "Payment"("method");
+CREATE UNIQUE INDEX "Payment_one_final_per_project_idx" ON "Payment"("projectId") WHERE "type" = 'FINAL' AND "status" <> 'CANCELLED';
+CREATE INDEX "PaymentAuditLog_paymentId_createdAt_idx" ON "PaymentAuditLog"("paymentId", "createdAt");
+CREATE INDEX "PaymentAuditLog_actorId_idx" ON "PaymentAuditLog"("actorId");
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_reviewedById_fkey" FOREIGN KEY ("reviewedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PaymentAuditLog" ADD CONSTRAINT "PaymentAuditLog_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PaymentAuditLog" ADD CONSTRAINT "PaymentAuditLog_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -15,6 +15,6 @@ test("les versions approuvées et finales refusent de nouvelles demandes", () =>
   assert.equal(canRequestModification("APPROVED"), false);
   assert.equal(canRequestModification("FINAL"), false);
   assert.equal(canRequestModification("READY_FOR_REVIEW"), true);
-  assert.equal(canRequestModification("CHANGES_REQUESTED"), true);
-  assert.equal(canRequestModification("DRAFT"), true);
+  assert.equal(canRequestModification("CHANGES_REQUESTED"), false);
+  assert.equal(canRequestModification("DRAFT"), false);
 });

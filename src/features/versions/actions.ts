@@ -12,8 +12,8 @@ const refresh = (projectId: string, versionId?: string) => { revalidatePath(`/ad
 export async function createVersion(_: ActionState, formData: FormData): Promise<ActionState> {
   await requireAdmin(); const parsed = versionSchema.safeParse(values(formData));
   if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Informations invalides." };
-  if (!await prisma.project.findUnique({ where: { id: parsed.data.projectId }, select: { id: true } })) return { status: "error", message: "Projet introuvable." };
-  try { const version = await prisma.projectVersion.create({ data: parsed.data, select: { id: true } }); refresh(parsed.data.projectId); return { status: "success", message: "Version créée avec succès.", id: version.id }; }
+  const project=await prisma.project.findUnique({ where: { id: parsed.data.projectId }, select: { id: true,status:true } });if(!project)return { status: "error", message: "Projet introuvable." };if(project.status==="APPROVED")return{status:"error",message:"Un projet approuvé ne peut pas être rouvert."};
+  try { const version = await prisma.$transaction(async tx=>{const created=await tx.projectVersion.create({ data: {...parsed.data,status:"DRAFT"}, select: { id: true } });await tx.project.update({where:{id:parsed.data.projectId},data:{status:"IN_PROGRESS"}});return created}); refresh(parsed.data.projectId); return { status: "success", message: "Version créée avec succès.", id: version.id }; }
   catch (error) { if (typeof error === "object" && error && "code" in error && error.code === "P2002") return { status: "error", message: "Ce numéro de version existe déjà pour ce projet." }; return { status: "error", message: "La création a échoué." }; }
 }
 
@@ -22,7 +22,7 @@ export async function updateVersion(_: ActionState, formData: FormData): Promise
   if (!parsed.success) return { status: "error", message: "Informations invalides." };
   const version = await prisma.projectVersion.findFirst({ where: { id: parsed.data.versionId, projectId: parsed.data.projectId }, select: { id: true } });
   if (!version) return { status: "error", message: "Version introuvable pour ce projet." };
-  await prisma.projectVersion.update({ where: { id: version.id }, data: { name: parsed.data.name, description: parsed.data.description, status: parsed.data.status } }); refresh(parsed.data.projectId, version.id); return { status: "success", message: "Version mise à jour." };
+  await prisma.projectVersion.update({ where: { id: version.id }, data: { name: parsed.data.name, description: parsed.data.description } }); refresh(parsed.data.projectId, version.id); return { status: "success", message: "Version mise à jour." };
 }
 
 export async function createDeliverable(_: ActionState, formData: FormData): Promise<ActionState> {

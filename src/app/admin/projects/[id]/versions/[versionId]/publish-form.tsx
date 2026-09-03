@@ -1,0 +1,3 @@
+"use client";
+import{useActionState}from"react";import{publishVersion}from"@/features/review-workflow/actions";import{initialActionState}from"@/features/versions/types";
+export function PublishForm({versionId}:{versionId:string}){const[state,action,pending]=useActionState(publishVersion,initialActionState);return <form action={action} className="mt-4"><input type="hidden" name="versionId" value={versionId}/>{state.status!=="idle"&&<p className={state.status==="success"?"mb-3 text-sm text-electric-mint":"mb-3 text-sm text-red-300"}>{state.message}</p>}<button disabled={pending} className="rounded-xl bg-electric-mint px-5 py-3 font-semibold text-graphite disabled:opacity-60">{pending?"Publication…":"Publier pour validation"}</button></form>}

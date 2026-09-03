@@ -32,7 +32,35 @@ enum ProjectStatus {
 
 enum PaymentStatus {
   PENDING
+  SUBMITTED
+  UNDER_REVIEW
   PAID
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentType {
+  DEPOSIT
+  FINAL
+  OTHER
+}
+
+enum PaymentMethod {
+  MPESA
+  AIRTEL_MONEY
+  ORANGE_MONEY
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum PaymentAuditAction {
+  PAYMENT_CREATED
+  PAYMENT_SUBMITTED
+  PAYMENT_RESUBMITTED
+  PAYMENT_REVIEW_STARTED
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
 }
 
 enum VersionStatus {
@@ -55,6 +83,17 @@ enum DeliverableType {
 enum DeliverablePreviewKind {
   FILE
   EXTERNAL_URL
+}
+
+enum DeliverableFinalKind {
+  FILE
+  EXTERNAL_URL
+}
+
+enum ProjectDeliveryAuditAction {
+  FINAL_ASSET_ADDED
+  FINAL_ASSET_REPLACED
+  PROJECT_DELIVERED
 }
 
 enum ModificationRequestStatus {
@@ -120,27 +159,27 @@ model Service {
 }
 
 model Order {
-  id              String       @id @default(cuid())
-  orderNumber     String       @unique
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
   clientId        String
   serviceId       String
-  source          OrderSource  @default(WEBSITE)
-  status          OrderStatus  @default(NEW)
+  source          OrderSource @default(WEBSITE)
+  status          OrderStatus @default(NEW)
   title           String
   description     String
   companyName     String?
-  budget          Decimal?     @db.Decimal(12, 2)
-  currency        String       @default("USD")
+  budget          Decimal?    @db.Decimal(12, 2)
+  currency        String      @default("USD")
   desiredDeadline DateTime?
-  quotedAmount    Decimal?     @db.Decimal(12, 2)
+  quotedAmount    Decimal?    @db.Decimal(12, 2)
   adminNotes      String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  client          User         @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  service         Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  auditLogs       OrderAuditLog[]
-  project         Project?
+  client    User            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  service   Service         @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  auditLogs OrderAuditLog[]
+  project   Project?
 
   @@index([clientId, createdAt])
   @@index([serviceId])
@@ -156,8 +195,8 @@ model OrderAuditLog {
   newValue  String?
   createdAt DateTime         @default(now())
 
-  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  admin     User             @relation("OrderAuditAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  admin User  @relation("OrderAuditAdmin", fields: [adminId], references: [id], onDelete: Restrict)
 
   @@index([orderId, createdAt])
   @@index([adminId])
@@ -174,13 +213,16 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  projects     Project[] @relation("ClientProjects")
-  requests     ChangeRequest[]
-  validations  ProjectVersion[] @relation("VersionValidatedBy")
-  modificationRequests ModificationRequest[]
-  versionApprovals VersionApproval[]
-  orders       Order[]
-  orderAuditLogs OrderAuditLog[] @relation("OrderAuditAdmin")
+  projects                 Project[]                 @relation("ClientProjects")
+  requests                 ChangeRequest[]
+  validations              ProjectVersion[]          @relation("VersionValidatedBy")
+  modificationRequests     ModificationRequest[]
+  versionApprovals         VersionApproval[]
+  orders                   Order[]
+  orderAuditLogs           OrderAuditLog[]           @relation("OrderAuditAdmin")
+  reviewedPayments         Payment[]                 @relation("PaymentReviewedBy")
+  paymentAuditLogs         PaymentAuditLog[]         @relation("PaymentAuditActor")
+  projectDeliveryAuditLogs ProjectDeliveryAuditLog[] @relation("ProjectDeliveryAuditActor")
 }
 
 model Project {
@@ -198,107 +240,181 @@ model Project {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  client        User            @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Restrict)
-  versions      ProjectVersion[]
-  changeRequests ChangeRequest[]
-  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  client            User                      @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Restrict)
+  versions          ProjectVersion[]
+  changeRequests    ChangeRequest[]
+  order             Order?                    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  payments          Payment[]
+  deliveryAuditLogs ProjectDeliveryAuditLog[]
 
   @@index([clientId])
   @@index([status])
 }
 
+model Payment {
+  id              String         @id @default(cuid())
+  projectId       String
+  amount          Decimal        @db.Decimal(12, 2)
+  currency        String
+  type            PaymentType    @default(FINAL)
+  method          PaymentMethod?
+  status          PaymentStatus  @default(PENDING)
+  reference       String?
+  proofStorageKey String?
+  proofFileName   String?
+  proofMimeType   String?
+  proofFileSize   Int?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  reviewedById    String?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewedBy User?             @relation("PaymentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  auditLogs  PaymentAuditLog[]
+
+  @@index([projectId, createdAt])
+  @@index([status, submittedAt])
+  @@index([method])
+}
+
+model PaymentAuditLog {
+  id        String             @id @default(cuid())
+  paymentId String
+  actorId   String
+  action    PaymentAuditAction
+  oldStatus PaymentStatus?
+  newStatus PaymentStatus
+  details   String?
+  createdAt DateTime           @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  actor   User    @relation("PaymentAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId, createdAt])
+  @@index([actorId])
+}
+
 model Deliverable {
-  id          String          @id @default(cuid())
-  name        String
-  type        DeliverableType
-  description String?
-  fileUrl     String?
-  fileName    String
-  mimeType    String?
-  fileSize    Int?
+  id                String                  @id @default(cuid())
+  name              String
+  type              DeliverableType
+  description       String?
+  fileUrl           String?
+  fileName          String
+  mimeType          String?
+  fileSize          Int?
   previewKind       DeliverablePreviewKind?
   previewStorageKey String?
   previewUrl        String?
   previewMimeType   String?
   previewFileName   String?
   previewFileSize   Int?
-  versionId   String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  finalKind         DeliverableFinalKind?
+  finalStorageKey   String?
+  finalUrl          String?
+  finalMimeType     String?
+  finalFileName     String?
+  finalFileSize     Int?
+  finalUploadedAt   DateTime?
+  versionId         String
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
 
-  version     ProjectVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  version ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   @@index([versionId])
 }
 
-model ProjectVersion {
-  id          String        @id @default(cuid())
-  versionNumber Int
-  name        String
-  description String?
-  previewUrl  String?
-  status      VersionStatus @default(DRAFT)
-  projectId   String
-  validatedById String?
-  validatedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+model ProjectDeliveryAuditLog {
+  id            String                     @id @default(cuid())
+  projectId     String
+  actorId       String
+  action        ProjectDeliveryAuditAction
+  deliverableId String?
+  createdAt     DateTime                   @default(now())
 
-  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  validatedBy User?         @relation("VersionValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
-  deliverables Deliverable[]
-  modificationRequests ModificationRequest[]
-  approval    VersionApproval?
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actor   User    @relation("ProjectDeliveryAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, createdAt])
+  @@index([actorId])
+}
+
+model ProjectVersion {
+  id            String        @id @default(cuid())
+  versionNumber Int
+  name          String
+  description   String?
+  previewUrl    String?
+  status        VersionStatus @default(DRAFT)
+  projectId     String
+  validatedById String?
+  validatedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  project                      Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  validatedBy                  User?                 @relation("VersionValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
+  deliverables                 Deliverable[]
+  modificationRequests         ModificationRequest[]
+  resolvedModificationRequests ModificationRequest[] @relation("ResolvedVersionRequests")
+  approval                     VersionApproval?
 
   @@unique([projectId, versionNumber])
   @@index([projectId])
 }
 
 model VersionApproval {
-  id         String         @id @default(cuid())
-  versionId  String         @unique
+  id         String   @id @default(cuid())
+  versionId  String   @unique
   clientId   String
-  approvedAt DateTime       @default(now())
-  createdAt  DateTime       @default(now())
+  approvedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
-  version    ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  client     User           @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  version ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  client  User           @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   @@index([clientId])
 }
 
 model ModificationRequest {
-  id            String                    @id @default(cuid())
-  versionId     String
-  clientId      String
-  title         String
-  description   String
-  status        ModificationRequestStatus @default(PENDING)
-  adminResponse String?
-  resolvedAt    DateTime?
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  id                String                    @id @default(cuid())
+  versionId         String
+  clientId          String
+  title             String
+  description       String
+  status            ModificationRequestStatus @default(PENDING)
+  adminResponse     String?
+  resolvedAt        DateTime?
+  resolvedVersionId String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
 
-  version       ProjectVersion            @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  client        User                      @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  version         ProjectVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  resolvedVersion ProjectVersion? @relation("ResolvedVersionRequests", fields: [resolvedVersionId], references: [id], onDelete: SetNull)
+  client          User            @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   @@index([versionId])
   @@index([clientId])
   @@index([status])
+  @@index([resolvedVersionId])
 }
 
 model ChangeRequest {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   message     String
   response    String?
   respondedAt DateTime?
   projectId   String
   authorId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
 
   @@index([projectId])
 }
