@@ -1,0 +1,2 @@
+import{requireClient}from"@/lib/auth/guards";import{getNotifications}from"@/features/notifications/queries";import{NotificationsList}from"@/app/notifications-list";
+export default async function Page(){const user=await requireClient();const items=await getNotifications(user.id);return <main className="mx-auto max-w-4xl px-5 py-10 text-white"><p className="text-sm font-bold tracking-[.18em] text-electric-mint">CENTRE</p><h1 className="mt-2 text-3xl font-bold">Notifications</h1><div className="mt-7"><NotificationsList items={items}/></div></main>}

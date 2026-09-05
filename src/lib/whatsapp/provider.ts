@@ -1,0 +1,2 @@
+import type{WhatsAppProvider}from"./types";import{whatsappProviderName}from"./config";import{ConsoleWhatsAppProvider}from"./console-provider";import{MetaWhatsAppProvider}from"./meta-provider";
+export function getWhatsAppProvider():WhatsAppProvider{const name=whatsappProviderName();if(name==="console")return new ConsoleWhatsAppProvider();if(name==="meta")return new MetaWhatsAppProvider();throw new Error(`WHATSAPP_PROVIDER non supporté: ${name}`)}

@@ -1,0 +1,1 @@
+import type{WhatsAppProvider}from"./types";export class ConsoleWhatsAppProvider implements WhatsAppProvider{async sendMessage(){const messageId=`console-wa-${Date.now()}-${Math.random().toString(36).slice(2)}`;console.info(`[whatsapp:console] accepted ${messageId}`);return{messageId}}}

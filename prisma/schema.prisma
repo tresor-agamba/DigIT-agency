@@ -96,6 +96,78 @@ enum ProjectDeliveryAuditAction {
   PROJECT_DELIVERED
 }
 
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS_CHANGED
+  PROJECT_CREATED
+  PREVIEW_READY
+  MODIFICATION_REQUEST_CREATED
+  MODIFICATION_REQUEST_UPDATED
+  VERSION_APPROVED
+  PAYMENT_REQUESTED
+  PAYMENT_SUBMITTED
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  FINAL_READY
+  PROJECT_DELIVERED
+  ADMIN_ACTION_REQUIRED
+}
+
+enum EmailOutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum TransactionalEmailType {
+  ORDER_CREATED
+  ORDER_QUOTED
+  ORDER_ACCEPTED
+  PROJECT_CREATED
+  PREVIEW_READY
+  MODIFICATION_REQUEST_UPDATED
+  PAYMENT_REQUESTED
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  PROJECT_DELIVERED
+  NEW_WEBSITE_ORDER
+  NEW_MODIFICATION_REQUEST
+  VERSION_APPROVED
+  PAYMENT_SUBMITTED
+}
+
+enum WhatsAppOutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum WhatsAppProviderStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum TransactionalWhatsAppType {
+  ORDER_CREATED
+  ORDER_QUOTED
+  ORDER_ACCEPTED
+  PROJECT_CREATED
+  PREVIEW_READY
+  MODIFICATION_REQUEST_UPDATED
+  PAYMENT_REQUESTED
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  PROJECT_DELIVERED
+  NEW_WEBSITE_ORDER
+  NEW_MODIFICATION_REQUEST
+  VERSION_APPROVED
+  PAYMENT_SUBMITTED
+}
+
 enum ModificationRequestStatus {
   PENDING
   IN_PROGRESS
@@ -212,6 +284,9 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  whatsappOptIn Boolean @default(false)
+  whatsappOptInAt DateTime?
+  whatsappOptOutAt DateTime?
 
   projects                 Project[]                 @relation("ClientProjects")
   requests                 ChangeRequest[]
@@ -223,6 +298,90 @@ model User {
   reviewedPayments         Payment[]                 @relation("PaymentReviewedBy")
   paymentAuditLogs         PaymentAuditLog[]         @relation("PaymentAuditActor")
   projectDeliveryAuditLogs ProjectDeliveryAuditLog[] @relation("ProjectDeliveryAuditActor")
+  notifications            Notification[]
+  emailOutbox              EmailOutbox[]
+  whatsappOutbox           WhatsAppOutbox[]
+}
+
+model WhatsAppOutbox {
+  id                  String                    @id @default(cuid())
+  recipientUserId     String?
+  toPhone             String
+  type                TransactionalWhatsAppType
+  status              WhatsAppOutboxStatus      @default(PENDING)
+  templateName        String?
+  templateLanguage    String?
+  payload             Json
+  dedupeKey           String                    @unique
+  attempts            Int                       @default(0)
+  maxAttempts         Int                       @default(5)
+  nextAttemptAt       DateTime                  @default(now())
+  processingStartedAt DateTime?
+  lastAttemptAt       DateTime?
+  sentAt              DateTime?
+  failedAt            DateTime?
+  lastError           String?
+  providerMessageId   String?
+  providerStatus      WhatsAppProviderStatus?
+  deliveredAt         DateTime?
+  readAt              DateTime?
+  providerFailedAt    DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+
+  recipientUser User? @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt])
+  @@index([recipientUserId])
+  @@index([providerMessageId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  type        NotificationType
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  dedupeKey   String?
+  createdAt   DateTime         @default(now())
+
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, dedupeKey])
+  @@index([recipientId, isRead, createdAt])
+  @@index([createdAt])
+}
+
+model EmailOutbox {
+  id                  String                 @id @default(cuid())
+  recipientUserId     String?
+  toEmail             String
+  type                TransactionalEmailType
+  status              EmailOutboxStatus      @default(PENDING)
+  subject             String
+  payload             Json
+  dedupeKey           String                 @unique
+  attempts            Int                    @default(0)
+  maxAttempts         Int                    @default(5)
+  nextAttemptAt       DateTime               @default(now())
+  lastAttemptAt       DateTime?
+  processingStartedAt DateTime?
+  sentAt              DateTime?
+  failedAt            DateTime?
+  lastError           String?
+  providerMessageId   String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  recipientUser User? @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt])
+  @@index([recipientUserId])
+  @@index([createdAt])
 }
 
 model Project {

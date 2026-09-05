@@ -19,4 +19,5 @@ export const publicOrderSchema = z.object({
   budget: optionalBudget,
   currency: z.string().trim().min(1, "La devise est obligatoire.").max(3).transform(value => value.toUpperCase()),
   desiredDeadline: optionalDeadline,
+  whatsappOptIn:z.preprocess(value=>value==="on"||value===true,z.boolean()),
 }).refine(data => data.password === data.passwordConfirmation, { path: ["passwordConfirmation"], message: "Les mots de passe ne correspondent pas." });

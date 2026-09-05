@@ -1,0 +1,2 @@
+import{requireAdmin}from"@/lib/auth/guards";import{getNotifications}from"@/features/notifications/queries";import{NotificationsList}from"@/app/notifications-list";
+export default async function Page(){const user=await requireAdmin();const items=await getNotifications(user.id);return <main className="mx-auto max-w-4xl px-6 py-12 text-white"><p className="text-sm font-bold tracking-[.18em] text-electric-mint">CENTRE</p><h1 className="mt-2 text-4xl font-bold">Notifications</h1><div className="mt-7"><NotificationsList items={items}/></div></main>}

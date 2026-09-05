@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "tsx --test src/**/*.test.ts",
+    "email:dispatch": "tsx scripts/dispatch-emails.ts",
+    "whatsapp:dispatch": "tsx scripts/dispatch-whatsapp.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"

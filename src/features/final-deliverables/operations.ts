@@ -1,4 +1,4 @@
-import type{Prisma}from"@prisma/client";import{prisma}from"@/lib/prisma";import{commitStagedFile,finalStorageKey,removePrivateFile,removeTempFile,stagePrivateFile}from"@/lib/storage/private-storage";import{validateFinalFile,validateFinalUrl}from"./validation";
+import type{Prisma}from"@prisma/client";import{prisma}from"@/lib/prisma";import{createNotification}from"@/features/notifications/operations";import{commitStagedFile,finalStorageKey,removePrivateFile,removeTempFile,stagePrivateFile}from"@/lib/storage/private-storage";import{validateFinalFile,validateFinalUrl}from"./validation";
 export class FinalDeliveryError extends Error{}
 async function context(projectId:string,versionId:string,deliverableId:string){
  const d=await prisma.deliverable.findFirst({where:{id:deliverableId,versionId,version:{projectId}},select:{id:true,type:true,finalKind:true,finalStorageKey:true,updatedAt:true,version:{select:{id:true,status:true,project:{select:{status:true,payments:{where:{type:"FINAL",status:"PAID"},select:{id:true},take:1},versions:{orderBy:{versionNumber:"desc"},select:{id:true},take:1}}}}}}});
@@ -27,7 +27,7 @@ export async function markProjectDelivered(actorId:string,projectId:string){
     const actor=await tx.user.findUnique({where:{id:actorId},select:{role:true}});
     if(actor?.role!=="ADMIN")throw new FinalDeliveryError("Seul un administrateur peut marquer le projet comme livré.");
     const project=await tx.project.findUnique({where:{id:projectId},select:{
-      status:true,
+      status:true,clientId:true,
       payments:{where:{type:"FINAL",status:"PAID"},select:{id:true},take:1},
       versions:{
         orderBy:{versionNumber:"desc"},take:1,
@@ -48,6 +48,7 @@ export async function markProjectDelivered(actorId:string,projectId:string){
     if(claimed.count!==1)throw new FinalDeliveryError("Le projet a déjà été livré.");
     await tx.projectVersion.update({where:{id:version.id},data:{status:"FINAL"}});
     await tx.projectDeliveryAuditLog.create({data:{projectId,actorId,action:"PROJECT_DELIVERED"}});
+    await createNotification(tx,{recipientId:project.clientId,type:"PROJECT_DELIVERED",title:"Votre projet est livré",message:"Votre livraison finale est maintenant disponible.",link:`/client/projects/${projectId}`,dedupeKey:`project-delivered:${projectId}`});
     return{projectId,versionId:version.id,deliveredAt:now};
   });
 }

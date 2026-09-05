@@ -1,0 +1,1 @@
+import{checkReadiness}from"@/lib/system/readiness";export async function GET(){const result=await checkReadiness();return Response.json({status:result.ready?"READY":"NOT_READY"},{status:result.ready?200:503})}

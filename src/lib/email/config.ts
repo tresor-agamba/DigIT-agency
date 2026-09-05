@@ -1,0 +1,3 @@
+export function emailMaxAttempts(){const n=Number.parseInt(process.env.EMAIL_MAX_ATTEMPTS??"5",10);return Number.isInteger(n)&&n>0?n:5}
+export function processingTimeoutMinutes(){const n=Number.parseInt(process.env.EMAIL_PROCESSING_TIMEOUT_MINUTES??"15",10);return Number.isInteger(n)&&n>0?n:15}
+export function buildAppUrl(link:string){if(!link.startsWith("/"))throw new Error("Lien email invalide.");const base=new URL(process.env.EMAIL_APP_BASE_URL??"http://localhost:3000");if(!["http:","https:"].includes(base.protocol))throw new Error("EMAIL_APP_BASE_URL invalide.");if(process.env.NODE_ENV==="production"&&base.protocol!=="https:")throw new Error("EMAIL_APP_BASE_URL doit utiliser HTTPS en production.");return new URL(link,base).toString()}

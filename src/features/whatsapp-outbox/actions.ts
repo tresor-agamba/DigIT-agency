@@ -1,0 +1,1 @@
+"use server";import{revalidatePath}from"next/cache";import{requireAdmin}from"@/lib/auth/guards";import{retryFailedWhatsApp}from"./operations";export async function retryWhatsAppAction(formData:FormData){const actor=await requireAdmin(),id=String(formData.get("id")??"");await retryFailedWhatsApp(actor.id,id);revalidatePath("/admin/whatsapp")}
