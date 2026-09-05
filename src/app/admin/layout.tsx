@@ -1,8 +1,2 @@
-import { requireAdmin } from "@/lib/auth/guards";
-import { AdminNavigation } from "@/app/admin/admin-navigation";
-import { getUnreadNotificationCount } from "@/features/notifications/queries";
-
-export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const user=await requireAdmin();const unread=await getUnreadNotificationCount(user.id);
-  return <><AdminNavigation unread={unread}/>{children}</>;
-}
+import {requireAdmin} from "@/lib/auth/guards"; import {AdminNavigation} from "@/app/admin/admin-navigation"; import {getUnreadNotificationCount} from "@/features/notifications/queries";
+export default async function AdminLayout({children}:Readonly<{children:React.ReactNode}>){const user=await requireAdmin();const unread=await getUnreadNotificationCount(user.id);return <div className="admin-portal min-h-screen bg-slate-50 text-slate-900"><AdminNavigation unread={unread} name={user.name??"Administrateur"}/><div className="admin-content min-h-screen pt-20 lg:pl-64">{children}</div></div>}

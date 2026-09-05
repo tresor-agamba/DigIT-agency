@@ -15,3 +15,57 @@ body {
   background: #0D1117;
   color: #FFFFFF;
 }
+
+.group:has(> a.absolute) { position: relative; }
+
+:focus-visible { outline: 3px solid #00a98a; outline-offset: 3px; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+/* UI-7: the existing Admin workflows keep their server components and actions;
+   this scoped skin gives every Admin route the same dense, light workspace. */
+.admin-portal main { color: #0f172a; }
+.admin-portal main.text-white, .admin-portal main .text-white { color: #0f172a; }
+.admin-portal main .text-muted { color: #64748b; }
+.admin-portal main .text-electric-mint { color: #087f6d; }
+.admin-portal main .bg-graphite-secondary,
+.admin-portal main .bg-graphite { background-color: #fff; }
+.admin-portal main .border-white\/5,
+.admin-portal main .border-white\/10,
+.admin-portal main .border-white\/15,
+.admin-portal main .border-white\/20 { border-color: #e2e8f0; }
+.admin-portal main input,
+.admin-portal main select,
+.admin-portal main textarea { color: #0f172a; background-color: #fff; }
+.admin-portal main section,
+.admin-portal main article { box-shadow: 0 8px 30px rgba(15,23,42,.025); }
+.admin-portal main a, .admin-portal main button { overflow-wrap: anywhere; }
+.admin-content > section { color: #0f172a; margin-left: auto; margin-right: auto; padding-left: 1.5rem; padding-right: 1.5rem; }
+.admin-content .bg-graphite-secondary,
+.admin-content .bg-graphite { background-color: #fff; }
+.admin-content .text-muted { color: #64748b; }
+.admin-content .text-electric-mint { color: #087f6d; }
+.admin-content .text-red-300,
+.admin-content .text-red-200 { color: #b91c1c; }
+.admin-content .text-amber-200 { color: #92400e; }
+.admin-content .border-white\/5,
+.admin-content .border-white\/10,
+.admin-content .border-white\/15,
+.admin-content .border-white\/20 { border-color: #e2e8f0; }
+
+@media (max-width: 767px) {
+  .admin-portal main { padding-left: 1.25rem; padding-right: 1.25rem; padding-top: 2rem; padding-bottom: 2rem; }
+  .admin-portal main h1 { font-size: 1.875rem; line-height: 2.25rem; }
+  .admin-portal main form.flex { flex-direction: column; }
+  .admin-portal main form.flex > button,
+  .admin-portal main form.flex > a { width: 100%; min-height: 44px; }
+  .admin-portal main .overflow-x-auto > div[class*="min-w-"] { min-width: 0; }
+  .admin-portal main .overflow-x-auto > div[class*="min-w-"] > div:first-child { display: none; }
+  .admin-portal main .overflow-x-auto > div[class*="min-w-"] > a { display: grid; grid-template-columns: 1fr; gap: .45rem; border-bottom: 1px solid #e2e8f0; }
+  .admin-portal main table { min-width: 760px; }
+}

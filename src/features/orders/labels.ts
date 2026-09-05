@@ -1,1 +1,1 @@
-export const orderStatusLabels = { NEW: "Nouvelle", UNDER_REVIEW: "En cours d’examen", NEEDS_INFORMATION: "Informations requises", QUOTED: "Devis envoyé", ACCEPTED: "Acceptée", REJECTED: "Refusée", CANCELLED: "Annulée", CONVERTED_TO_PROJECT: "Convertie en projet" } as const;
+export const orderStatusLabels={NEW:"Nouvelle",UNDER_REVIEW:"En cours d’examen",NEEDS_INFORMATION:"Informations requises",QUOTED:"Devis envoyé",ACCEPTED:"Acceptée",REJECTED:"Refusée",CANCELLED:"Annulée",CONVERTED_TO_PROJECT:"Convertie en projet"} as const;

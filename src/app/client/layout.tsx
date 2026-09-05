@@ -1,8 +1,2 @@
-import { requireClient } from "@/lib/auth/guards";
-import { ClientNavigation } from "@/app/client/client-navigation";
-import { getUnreadNotificationCount } from "@/features/notifications/queries";
-
-export default async function ClientLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const user=await requireClient();const unread=await getUnreadNotificationCount(user.id);
-  return <><ClientNavigation unread={unread}/>{children}</>;
-}
+import{requireClient}from"@/lib/auth/guards";import{ClientNavigation}from"./client-navigation";import{getUnreadNotificationCount}from"@/features/notifications/queries";
+export default async function ClientLayout({children}:Readonly<{children:React.ReactNode}>){const user=await requireClient(),unread=await getUnreadNotificationCount(user.id);return <div className="min-h-screen bg-slate-50 text-graphite"><ClientNavigation unread={unread} name={user.name??"Client"}/><div className="min-w-0 pt-20 lg:ml-64">{children}</div></div>}
