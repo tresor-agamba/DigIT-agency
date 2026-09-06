@@ -13,7 +13,8 @@ export function privateStorageRoot() {
 }
 
 export function resolvePrivateStorageKey(storageKey:string){
-  if(!storageKey||path.isAbsolute(storageKey)||storageKey.includes("\0"))throw new PrivateStorageError("Clé de stockage invalide.");
+  const isAbsolute=path.posix.isAbsolute(storageKey)||path.win32.isAbsolute(storageKey);
+  if(!storageKey||isAbsolute||storageKey.includes("\0"))throw new PrivateStorageError("Clé de stockage invalide.");
   const root=privateStorageRoot();const target=path.resolve(root,...storageKey.split("/"));
   if(target!==root&&!target.startsWith(`${root}${path.sep}`))throw new PrivateStorageError("Clé de stockage hors racine.");
   return target;
